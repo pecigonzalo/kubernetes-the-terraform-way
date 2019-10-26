@@ -19,6 +19,7 @@ module "ctrl-0" {
 
   vpc_id                        = "${module.vpc.vpc_id}"
   subnet                        = "${module.dynamic_subnets.public_subnet_ids[0]}"
+  source_dest_check             = false
   associate_public_ip_address   = false
   assign_eip_address            = false
   create_default_security_group = "true"                                           # TODO: Switch to false once we attach a SG
@@ -47,6 +48,7 @@ module "ctrl-1" {
 
   vpc_id                        = "${module.vpc.vpc_id}"
   subnet                        = "${module.dynamic_subnets.public_subnet_ids[1]}"
+  source_dest_check             = false
   associate_public_ip_address   = false
   assign_eip_address            = false
   create_default_security_group = "true"                                           # TODO: Switch to false once we attach a SG
@@ -75,6 +77,7 @@ module "ctrl-2" {
 
   vpc_id                        = "${module.vpc.vpc_id}"
   subnet                        = "${module.dynamic_subnets.public_subnet_ids[2]}"
+  source_dest_check             = false
   associate_public_ip_address   = false
   assign_eip_address            = false
   create_default_security_group = "true"                                           # TODO: Switch to false once we attach a SG
