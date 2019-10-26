@@ -17,15 +17,14 @@ module "ctrl-0" {
   ami       = "${local.ami}"
   ami_owner = "${local.ami_owner}"
 
-  vpc_id                        = "${module.vpc.vpc_id}"
-  subnet                        = "${module.dynamic_subnets.public_subnet_ids[0]}"
-  source_dest_check             = false
-  associate_public_ip_address   = false
-  assign_eip_address            = false
-  create_default_security_group = "true"                                           # TODO: Switch to false once we attach a SG
+  vpc_id                      = "${module.vpc.vpc_id}"
+  subnet                      = "${module.dynamic_subnets.public_subnet_ids[0]}"
+  source_dest_check           = false
+  associate_public_ip_address = true
+  assign_eip_address          = false
 
-  # security_groups = ["${var.security_groups}"]
-  private_ip = "${cidrhost(module.dynamic_subnets.public_subnet_cidrs[0], 10)}"
+  security_groups = ["${aws_security_group.k8s-external.id}"]
+  private_ip      = "${cidrhost(module.dynamic_subnets.public_subnet_cidrs[0], 10)}"
 
   ssh_key_pair     = "${var.ssh_key_pair}"
   instance_type    = "${local.ctrl_instance_type}"
@@ -46,15 +45,14 @@ module "ctrl-1" {
   ami       = "${local.ami}"
   ami_owner = "${local.ami_owner}"
 
-  vpc_id                        = "${module.vpc.vpc_id}"
-  subnet                        = "${module.dynamic_subnets.public_subnet_ids[1]}"
-  source_dest_check             = false
-  associate_public_ip_address   = false
-  assign_eip_address            = false
-  create_default_security_group = "true"                                           # TODO: Switch to false once we attach a SG
+  vpc_id                      = "${module.vpc.vpc_id}"
+  subnet                      = "${module.dynamic_subnets.public_subnet_ids[1]}"
+  source_dest_check           = false
+  associate_public_ip_address = true
+  assign_eip_address          = false
 
-  # security_groups = ["${var.security_groups}"]
-  private_ip = "${cidrhost(module.dynamic_subnets.public_subnet_cidrs[1], 10)}"
+  security_groups = ["${aws_security_group.k8s-external.id}"]
+  private_ip      = "${cidrhost(module.dynamic_subnets.public_subnet_cidrs[1], 10)}"
 
   ssh_key_pair     = "${var.ssh_key_pair}"
   instance_type    = "${local.ctrl_instance_type}"
@@ -75,15 +73,14 @@ module "ctrl-2" {
   ami       = "${local.ami}"
   ami_owner = "${local.ami_owner}"
 
-  vpc_id                        = "${module.vpc.vpc_id}"
-  subnet                        = "${module.dynamic_subnets.public_subnet_ids[2]}"
-  source_dest_check             = false
-  associate_public_ip_address   = false
-  assign_eip_address            = false
-  create_default_security_group = "true"                                           # TODO: Switch to false once we attach a SG
+  vpc_id                      = "${module.vpc.vpc_id}"
+  subnet                      = "${module.dynamic_subnets.public_subnet_ids[2]}"
+  source_dest_check           = false
+  associate_public_ip_address = true
+  assign_eip_address          = false
 
-  # security_groups = ["${var.security_groups}"]
-  private_ip = "${cidrhost(module.dynamic_subnets.public_subnet_cidrs[2], 10)}"
+  security_groups = ["${aws_security_group.k8s-external.id}"]
+  private_ip      = "${cidrhost(module.dynamic_subnets.public_subnet_cidrs[2], 10)}"
 
   ssh_key_pair     = "${var.ssh_key_pair}"
   instance_type    = "${local.ctrl_instance_type}"
