@@ -1,3 +1,6 @@
+.PHONY: default
+default: init apply certificates ansible
+
 .PHONY: init
 init:
 	terraform init terraform/
