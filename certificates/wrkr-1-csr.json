@@ -1,0 +1,14 @@
+{
+  "CN": "system:node:wrkr-1",
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "names": [{
+    "C": "ES",
+    "L": "Balearic Islands",
+    "S": "Balearic Islands",
+    "O": "system:nodes",
+    "OU": "Kubernetes The Terraform Way"
+  }]
+}

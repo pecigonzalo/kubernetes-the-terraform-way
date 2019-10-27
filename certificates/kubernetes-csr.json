@@ -1,0 +1,14 @@
+{
+  "CN": "kubernetes",
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "names": [{
+    "C": "ES",
+    "L": "Balearic Islands",
+    "S": "Balearic Islands",
+    "O": "Kubernetes",
+    "OU": "Kubernetes The Terraform Way"
+  }]
+}

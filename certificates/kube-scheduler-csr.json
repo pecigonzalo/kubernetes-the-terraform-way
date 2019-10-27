@@ -1,0 +1,14 @@
+{
+  "CN": "system:kube-scheduler",
+  "key": {
+    "algo": "rsa",
+    "size": 2048
+  },
+  "names": [{
+    "C": "ES",
+    "L": "Balearic Islands",
+    "S": "Balearic Islands",
+    "O": "system:kube-scheduler",
+    "OU": "Kubernetes The Terraform Way"
+  }]
+}
