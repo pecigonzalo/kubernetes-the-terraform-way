@@ -21,7 +21,7 @@ data "template_file" "ansible_hosts" {
   }
 }
 
-resource "local_file" "foo" {
+resource "local_file" "hosts" {
   content  = "${data.template_file.ansible_hosts.rendered}"
   filename = "${path.cwd}/.terraform/hosts.conf"
 }
