@@ -1,4 +1,4 @@
-default: ca controllers workers proxy scheduler kubernetes
+default: ca controllers workers proxy scheduler kubernetes service-account
 
 CERTS:=ca-key.pem ca.csr ca.pem
 $(CERTS):
@@ -52,3 +52,12 @@ kubernetes:
 		-hostname=127.0.0.1,kubernetes,10.240.96.10,10.240.128.10,10.240.160.10,kubernetes.default,kubernetes.default.svc,kubernetes.default.svc.cluster,kubernetes.svc.cluster.local \
 		-profile=kubernetes \
 		kubernetes-csr.json | cfssljson -bare kubernete
+
+.PHONY: service-account
+service-account:
+	cfssl gencert \
+		-ca=ca.pem \
+		-ca-key=ca-key.pem \
+		-config=ca-config.json \
+		-profile=kubernetes \
+		service-account-csr.json | cfssljson -bare service-account
