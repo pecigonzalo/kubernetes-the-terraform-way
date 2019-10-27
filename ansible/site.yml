@@ -1,5 +1,5 @@
 ---
-- name: Controllers Certs
+- name: Controllers
   hosts: controllers
   tasks:
     - name: Copy Certs
@@ -13,8 +13,16 @@
         - kubernetes.pem
         - service-account-key.pem
         - service-account.pem
+    - name: Copy kubeconfig
+      copy:
+        src: ../kubeconfig/{{ item }}
+        dest: ~/{{ item }}
+      with_items:
+        - admin.kubeconfig
+        - kube-controller-manager.kubeconfig
+        - kube-scheduler.kubeconfig
 
-- name: Worker Certs
+- name: Worker
   hosts: workers
   tasks:
     - name: Copy Certs
@@ -25,3 +33,10 @@
         - ca.pem
         - "{{ inventory_hostname }}.pem"
         - "{{ inventory_hostname }}-key.pem"
+    - name: Copy kubeconfig
+      copy:
+        src: ../kubeconfig/{{ item }}
+        dest: ~/{{ item }}
+      with_items:
+        - kube-proxy.kubeconfig
+        - "{{ inventory_hostname }}.kubeconfig"
