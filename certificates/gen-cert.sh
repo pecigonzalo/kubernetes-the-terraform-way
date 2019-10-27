@@ -13,6 +13,6 @@ cfssl gencert \
   -ca=ca.pem \
   -ca-key=ca-key.pem \
   -config=ca-config.json \
-  -hostname="${NAMES}" \
+  -hostname="${instance},${NAMES}" \
   -profile=kubernetes \
   "${instance}"-csr.json | cfssljson -bare "${instance}"
