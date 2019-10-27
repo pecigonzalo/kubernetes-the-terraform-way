@@ -1,1 +1,1 @@
-ansible_ssh_common_args: "-J ubuntu@18.197.103.183"
+ansible_ssh_common_args: "-J ubuntu@35.157.221.79"

@@ -16,3 +16,4 @@ This repository is used to implement and follow [kubernetes-the-hard-way](https:
 ## TODO
 - [ ] Add CNAME or similar static DNS or IPs to LB
 - [ ] Set `ansible/group_vars/workers.yml` dynamically
+- [ ] Set `certificates/Makefile` cert dynamically

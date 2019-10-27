@@ -8,6 +8,39 @@ resource "aws_route53_zone" "kttw" {
   tags = "${module.lb_label.tags}"
 }
 
+resource "aws_route53_record" "ctrl-0" {
+  zone_id = "${aws_route53_zone.kttw.zone_id}"
+  name    = "ctrl-0"
+  type    = "CNAME"
+  ttl     = "30"
+
+  records = [
+    "${module.ctrl-0.private_dns}",
+  ]
+}
+
+resource "aws_route53_record" "ctrl-1" {
+  zone_id = "${aws_route53_zone.kttw.zone_id}"
+  name    = "ctrl-1"
+  type    = "CNAME"
+  ttl     = "30"
+
+  records = [
+    "${module.ctrl-1.private_dns}",
+  ]
+}
+
+resource "aws_route53_record" "ctrl-2" {
+  zone_id = "${aws_route53_zone.kttw.zone_id}"
+  name    = "ctrl-2"
+  type    = "CNAME"
+  ttl     = "30"
+
+  records = [
+    "${module.ctrl-2.private_dns}",
+  ]
+}
+
 resource "aws_route53_record" "wrkr-0" {
   zone_id = "${aws_route53_zone.kttw.zone_id}"
   name    = "wrkr-0"

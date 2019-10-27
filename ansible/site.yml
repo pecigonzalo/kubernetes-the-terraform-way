@@ -16,6 +16,8 @@
         name: "systemd-resolved"
         daemon_reload: yes
         state: restarted
+    - hostname:
+        name: "{{ inventory_hostname }}"
 
 - name: Controller Certificates
   tags:

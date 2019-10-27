@@ -13,12 +13,12 @@ apply:
 .PHONY: output
 output:
 	TF_CLI_ARGS="" terraform output -json | tee certificates/nodes.json
-	tools/gen-kubeconfig.sh
 	cp .terraform/hosts.conf ansible/hosts.conf
 
 .PHONY: certificates
 certificates:
 	$(MAKE) -C certificates
+	tools/gen-kubeconfig.sh
 
 .PHONY: ansible
 ansible:
