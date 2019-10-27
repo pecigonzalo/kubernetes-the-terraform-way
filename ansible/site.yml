@@ -21,6 +21,59 @@
         - admin.kubeconfig
         - kube-controller-manager.kubeconfig
         - kube-scheduler.kubeconfig
+    - name: Encryption Config
+      copy:
+        dest: ~/encryption-config.yaml
+        content: |
+          kind: EncryptionConfig
+          apiVersion: v1
+          resources:
+            - resources:
+                - secrets
+              providers:
+                - aescbc:
+                    keys:
+                      - name: key1
+                        secret: xJ+zuuX8JByMhPdb630myE646NeBGQKaNlrG1pzs5ec= # TODO: Change or generate
+                - identity: {}
+    - name: Get etcd
+      unarchive:
+        src: https://github.com/etcd-io/etcd/releases/download/v3.4.0/etcd-v3.4.0-linux-amd64.tar.gz
+        dest: /usr/local/bin/
+        remote_src: true
+        extra_opts:
+          - --strip=1
+        exclude:
+          - README*
+          - Documentation
+    - name: Create etcd dirs
+      file:
+        path: "{{ item }}"
+        state: directory
+      with_items:
+        - /etc/etcd
+        - /var/lib/etcd
+    - name: Copy etcd config
+      copy:
+        src: ../certificates/{{ item }}
+        dest: /etc/etcd/{{ item }}
+      with_items:
+        - ca.pem
+        - kubernetes-key.pem
+        - kubernetes.pem
+    - name: Create etcd service
+      vars:
+        ETCD_NAME: "{{ inventory_hostname }}"
+        INTERNAL_IP: "{{ ansible_default_ipv4.address }}"
+      template:
+        src: templates/etcd.service.j2
+        dest: /etc/systemd/system/etcd.service
+    - name: Start and Enable etcd
+      service:
+        name: etcd
+        enabled: yes
+        state: started
+        daemon_reload: true
 
 - name: Worker
   hosts: workers
