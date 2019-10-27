@@ -31,7 +31,7 @@ module "dynamic_subnets" {
 }
 
 resource "aws_security_group" "k8s-internal" {
-  name_prefix = "k8s-internal"
+  name_prefix = "kttw-internal"
   description = "Allow all internal"
   vpc_id      = "${module.vpc.vpc_id}"
 
@@ -52,10 +52,14 @@ resource "aws_security_group" "k8s-internal" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 resource "aws_security_group" "k8s-external" {
-  name_prefix = "k8s-external"
+  name_prefix = "kttw-external"
   description = "Allow SSH,ICMP,HTTPS"
   vpc_id      = "${module.vpc.vpc_id}"
 
@@ -85,5 +89,34 @@ resource "aws_security_group" "k8s-external" {
     to_port     = 0
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "aws_security_group" "k8s-lb" {
+  name_prefix = "kttw-lb"
+  description = "Allow LB traffic"
+  vpc_id      = "${module.vpc.vpc_id}"
+
+  ingress {
+    from_port = 6443
+    to_port   = 6443
+    protocol  = "tcp"
+
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  lifecycle {
+    create_before_destroy = true
   }
 }

@@ -17,3 +17,14 @@ resource "aws_lb" "kttw" {
 
   tags = "${module.lb_label.tags}"
 }
+
+resource "aws_lb_listener" "kttw" {
+  load_balancer_arn = "${aws_lb.kttw.arn}"
+  port              = 6443
+  protocol          = "TCP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = "${aws_lb_target_group.controllers.arn}"
+  }
+}
