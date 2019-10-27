@@ -1,4 +1,4 @@
-default: ca controllers workers proxy scheduler kubernetes service-account
+default: ca admin workers controllers proxy scheduler kubernetes service-account
 
 CERTS:=ca-key.pem ca.csr ca.pem
 $(CERTS):
@@ -6,6 +6,15 @@ $(CERTS):
 
 .PHONY: ca
 ca: $(CERTS)
+
+.PHONY: admin
+admin:
+	cfssl gencert \
+		-ca=ca.pem \
+		-ca-key=ca-key.pem \
+		-config=ca-config.json \
+		-profile=kubernetes \
+		admin-csr.json | cfssljson -bare admin
 
 WORKERS:=wrkr-0 wrkr-1 wrkr-2
 .PHONY: $(WORKERS)
