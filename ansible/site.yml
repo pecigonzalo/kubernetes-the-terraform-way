@@ -1,0 +1,27 @@
+---
+- name: Controllers Certs
+  hosts: controllers
+  tasks:
+    - name: Copy Certs
+      copy:
+        src: ../certificates/{{ item }}
+        dest: ~/{{ item }}
+      with_items:
+        - ca.pem
+        - ca-key.pem
+        - kubernetes-key.pem
+        - kubernetes.pem
+        - service-account-key.pem
+        - service-account.pem
+
+- name: Worker Certs
+  hosts: workers
+  tasks:
+    - name: Copy Certs
+      copy:
+        src: ../certificates/{{ item }}
+        dest: ~/{{ item }}
+      with_items:
+        - ca.pem
+        - "{{ inventory_hostname }}.pem"
+        - "{{ inventory_hostname }}-key.pem"

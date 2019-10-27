@@ -51,7 +51,7 @@ kubernetes:
 		-config=ca-config.json \
 		-hostname=127.0.0.1,kubernetes,10.240.96.10,10.240.128.10,10.240.160.10,kubernetes.default,kubernetes.default.svc,kubernetes.default.svc.cluster,kubernetes.svc.cluster.local \
 		-profile=kubernetes \
-		kubernetes-csr.json | cfssljson -bare kubernete
+		kubernetes-csr.json | cfssljson -bare kubernetes
 
 .PHONY: service-account
 service-account:

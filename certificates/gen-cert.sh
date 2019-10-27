@@ -5,7 +5,7 @@ instance="${1}"
 
 NAMES=$(
   jq -r \
-    '[.[].value | with_entries(select(.key|test("'"${instance}"'"))) | .[]] | join(",")' \
+    '[.[].value | select(type == "object") | with_entries(select(.key|test("'"${instance}"'"))) | .[]] | join(",")' \
     nodes.json
 )
 
