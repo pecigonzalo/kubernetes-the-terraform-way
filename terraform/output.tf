@@ -39,5 +39,5 @@ output "worker_private_dns_names" {
 }
 
 output "lb_addresses" {
-  value = "${aws_lb.kttw.dns_name}"
+  value = "${aws_eip.lb.public_dns}"
 }

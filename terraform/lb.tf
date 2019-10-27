@@ -6,6 +6,12 @@ module "lb_label" {
   name      = "kttw"
 }
 
+resource "aws_eip" "lb" {
+  vpc = true
+
+  tags = "${module.lb_label.tags}"
+}
+
 resource "aws_lb" "kttw" {
   name = "${module.lb_label.id}"
 
@@ -13,7 +19,10 @@ resource "aws_lb" "kttw" {
   load_balancer_type = "network"
   ip_address_type    = "ipv4"
 
-  subnets = ["${module.dynamic_subnets.public_subnet_ids}"]
+  subnet_mapping {
+    subnet_id     = "${module.dynamic_subnets.public_subnet_ids[0]}"
+    allocation_id = "${aws_eip.lb.id}"
+  }
 
   tags = "${module.lb_label.tags}"
 }
