@@ -1,5 +1,8 @@
 ---
 - name: Controllers
+  tags:
+    - controllers
+    - controllers-init
   hosts: controllers
   tasks:
     - name: Copy Certs
@@ -174,6 +177,9 @@
         state: restarted
 
 - name: Worker
+  tags:
+    - workers
+    - workers-init
   hosts: workers
   tasks:
     - name: Copy Certs
@@ -193,6 +199,9 @@
         - "{{ inventory_hostname }}.kubeconfig"
 
 - name: Kubectl with ctrl-0
+  tags:
+    - controllers
+    - kubectl
   hosts: ctrl-0
   tasks:
     - name: Create RBAC apiserver to kubelet role
@@ -238,3 +247,205 @@
               kind: User
               name: kubernetes
     - command: kubectl apply --kubeconfig /root/admin.kubeconfig -f /tmp/kube-apiserver.yml
+
+- name: Workers Bootrstrap
+  tags:
+    - workers
+    - workers-init
+  hosts: workers
+  tasks:
+    - name: Install deps
+      apt:
+        name: "{{ packages }}"
+      vars:
+        packages:
+          - socat
+          - conntrack
+          - ipset
+    - name: Download kubernetes worker binaries
+      get_url:
+        url: "{{ item.url }}"
+        dest: "{{ item.dest }}"
+        mode: "0755"
+      with_items:
+        - dest: /usr/local/bin/kube-proxy
+          url: "https://storage.googleapis.com/kubernetes-release/release/v1.15.3/bin/linux/amd64/kube-proxy"
+        - dest: /usr/local/bin/kubelet
+          url: "https://storage.googleapis.com/kubernetes-release/release/v1.15.3/bin/linux/amd64/kubelet"
+        - dest: /usr/local/bin/kubectl
+          url: "https://storage.googleapis.com/kubernetes-release/release/v1.15.3/bin/linux/amd64/kubectl"
+        - dest: /usr/local/bin/runc
+          url: "https://github.com/opencontainers/runc/releases/download/v1.0.0-rc8/runc.amd64"
+    - name: Create kubernetes dirs
+      file:
+        path: "{{ item }}"
+        state: directory
+      with_items:
+        - /etc/cni/net.d
+        - /opt/cni/bin
+        - /var/lib/kubelet
+        - /var/lib/kube-proxy
+        - /var/lib/kubernetes
+        - /var/run/kubernetes
+    - name: Download cni and containerd
+      unarchive:
+        src: "{{ item.url }}"
+        dest: "{{ item.dest }}"
+        mode: "0755"
+        remote_src: true
+        extra_opts:
+          - --strip=1
+      with_items:
+        - dest: /usr/local/bin/
+          url: https://github.com/kubernetes-sigs/cri-tools/releases/download/v1.15.0/crictl-v1.15.0-linux-amd64.tar.gz
+        - dest: /opt/cni/bin/
+          url: https://github.com/containernetworking/plugins/releases/download/v0.8.2/cni-plugins-linux-amd64-v0.8.2.tgz
+        - dest: /bin/
+          url: https://github.com/containerd/containerd/releases/download/v1.2.9/containerd-1.2.9.linux-amd64.tar.gz
+    - name: Download crictl
+      unarchive:
+        src: https://github.com/kubernetes-sigs/cri-tools/releases/download/v1.15.0/crictl-v1.15.0-linux-amd64.tar.gz
+        dest: /usr/local/bin/
+        mode: "0755"
+        remote_src: true
+
+- name: Workers Configure CNI Networking
+  tags:
+    - workers
+    - cni
+  hosts: workers
+  tasks:
+    - name: Create the bridge network configuration file
+      copy:
+        dest: /etc/cni/net.d/10-bridge.conf
+        content: |
+          {
+              "cniVersion": "0.3.1",
+              "name": "bridge",
+              "type": "bridge",
+              "bridge": "cnio0",
+              "isGateway": true,
+              "ipMasq": true,
+              "ipam": {
+                  "type": "host-local",
+                  "ranges": [
+                    [{"subnet": "10.200.0.0/16"}]
+                  ],
+                  "routes": [{"dst": "0.0.0.0/0"}]
+              }
+          }
+    - name: Create the loopback network configuration file
+      copy:
+        dest: /etc/cni/net.d/99-loopback.conf
+        content: |
+          {
+              "cniVersion": "0.3.1",
+              "name": "lo",
+              "type": "loopback"
+          }
+    - name: Create the containerd configuration dir
+      file:
+        path: "/etc/containerd/"
+        state: directory
+    - name: Create the containerd configuration file
+      copy:
+        dest: /etc/containerd/config.toml
+        content: |
+          [plugins]
+            [plugins.cri.containerd]
+              snapshotter = "overlayfs"
+              [plugins.cri.containerd.default_runtime]
+                runtime_type = "io.containerd.runtime.v1.linux"
+                runtime_engine = "/usr/local/bin/runc"
+                runtime_root = ""
+    - name: Configure containerd
+      copy:
+        src: files/containerd.service
+        dest: /etc/systemd/system/containerd.service
+
+- name: Configure the Kubelet
+  tags:
+    - workers
+    - kubelet
+  hosts: workers
+  tasks:
+    - name: Copy kubelet certs and kubeconfig
+      copy:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+      with_items:
+        - src: ../certificates/{{ inventory_hostname }}-key.pem
+          dest: /var/lib/kubelet/{{ inventory_hostname }}-key.pem
+        - src: ../certificates/{{ inventory_hostname }}.pem
+          dest: /var/lib/kubelet/{{ inventory_hostname }}.pem
+        - src: ../certificates/ca.pem
+          dest: /var/lib/kubernetes/ca.pem
+        - src: ../kubeconfig/{{ inventory_hostname }}.kubeconfig
+          dest: /var/lib/kubelet/kubeconfig
+    - name: Create the kubelet-config.yaml configuration file
+      copy:
+        dest: /var/lib/kubelet/kubelet-config.yaml
+        content: |
+          kind: KubeletConfiguration
+          apiVersion: kubelet.config.k8s.io/v1beta1
+          authentication:
+            anonymous:
+              enabled: false
+            webhook:
+              enabled: true
+            x509:
+              clientCAFile: "/var/lib/kubernetes/ca.pem"
+          authorization:
+            mode: Webhook
+          clusterDomain: "cluster.local"
+          clusterDNS:
+            - "10.32.0.10"
+          podCIDR: "10.200.0.0/16"
+          resolvConf: "/run/systemd/resolve/resolv.conf"
+          runtimeRequestTimeout: "15m"
+          tlsCertFile: "/var/lib/kubelet/{{ inventory_hostname }}.pem"
+          tlsPrivateKeyFile: "/var/lib/kubelet/{{ inventory_hostname }}-key.pem"
+    - name: Create the kubelet.service systemd unit file
+      copy:
+        src: files/kubelet.service
+        dest: /etc/systemd/system/kubelet.service
+
+- name: Configure the Kubernetes Proxy
+  tags:
+    - workers
+    - kube-proxy
+  hosts: workers
+  tasks:
+    - copy:
+        src: ../kubeconfig/kube-proxy.kubeconfig
+        dest: /var/lib/kube-proxy/kubeconfig
+    - name: Create the kube-proxy-config.yaml configuration file
+      copy:
+        dest: /var/lib/kube-proxy/kube-proxy-config.yaml
+        content: |
+          kind: KubeProxyConfiguration
+          apiVersion: kubeproxy.config.k8s.io/v1alpha1
+          clientConnection:
+            kubeconfig: "/var/lib/kube-proxy/kubeconfig"
+          mode: "iptables"
+          clusterCIDR: "10.200.0.0/16"
+    - name: Create the kube-proxy.service systemd unit file
+      copy:
+        src: files/kube-proxy.service
+        dest: /etc/systemd/system/kube-proxy.service
+
+- name: Start the Worker Services
+  tags:
+    - workers
+    - workers-start-services
+  hosts: workers
+  tasks:
+    - service:
+        name: "{{ item }}"
+        enabled: yes
+        state: started
+        daemon_reload: true
+      with_items:
+        - containerd
+        - kubelet
+        - kube-proxy
