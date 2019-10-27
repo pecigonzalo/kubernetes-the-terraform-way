@@ -5,3 +5,6 @@ This repository is used to implement and follow [kubernetes-the-hard-way](https:
 ## Tools
 - `terraform`: Using `0.11.14` as most linters/syntax/etc is still not working with `0.12`
 - `direnv`
+
+## TODO
+- [ ] Add CNAME or similar static DNS or IPs to LB
