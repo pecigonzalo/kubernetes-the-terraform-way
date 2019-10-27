@@ -21,21 +21,7 @@
         - admin.kubeconfig
         - kube-controller-manager.kubeconfig
         - kube-scheduler.kubeconfig
-    - name: Encryption Config
-      copy:
-        dest: ~/encryption-config.yaml
-        content: |
-          kind: EncryptionConfig
-          apiVersion: v1
-          resources:
-            - resources:
-                - secrets
-              providers:
-                - aescbc:
-                    keys:
-                      - name: key1
-                        secret: xJ+zuuX8JByMhPdb630myE646NeBGQKaNlrG1pzs5ec= # TODO: Change or generate
-                - identity: {}
+    # etcd
     - name: Get etcd
       unarchive:
         src: https://github.com/etcd-io/etcd/releases/download/v3.4.0/etcd-v3.4.0-linux-amd64.tar.gz
@@ -74,6 +60,104 @@
         enabled: yes
         state: started
         daemon_reload: true
+    # kubernetes
+    - name: Create kubernetes dirs
+      file:
+        path: "{{ item }}"
+        state: directory
+      with_items:
+        - /etc/kubernetes/config
+        - /var/lib/kubernetes/
+    - name: Download kubernetes binaries
+      get_url:
+        url: "{{ item.url }}"
+        dest: "{{ item.dest }}"
+        mode: "0755"
+      with_items:
+        - dest: /usr/local/bin/kube-apiserver
+          url: "https://storage.googleapis.com/kubernetes-release/release/v1.15.3/bin/linux/amd64/kube-apiserver"
+        - dest: /usr/local/bin/kube-controller-manager
+          url: "https://storage.googleapis.com/kubernetes-release/release/v1.15.3/bin/linux/amd64/kube-controller-manager"
+        - dest: /usr/local/bin/kube-scheduler
+          url: "https://storage.googleapis.com/kubernetes-release/release/v1.15.3/bin/linux/amd64/kube-scheduler"
+        - dest: /usr/local/bin/kubectl
+          url: "https://storage.googleapis.com/kubernetes-release/release/v1.15.3/bin/linux/amd64/kubectl"
+    # kube-apiserver
+    - name: Copy kube-apiserver config
+      copy:
+        src: "../certificates/{{ item }}"
+        dest: /var/lib/kubernetes/{{ item }}
+      with_items:
+        - ca.pem
+        - ca-key.pem
+        - kubernetes-key.pem
+        - kubernetes.pem
+        - service-account-key.pem
+        - service-account.pem
+    - name: Encryption Config kube-apiserver
+      copy:
+        dest: /var/lib/kubernetes/encryption-config.yaml
+        content: |
+          kind: EncryptionConfig
+          apiVersion: v1
+          resources:
+            - resources:
+                - secrets
+              providers:
+                - aescbc:
+                    keys:
+                      - name: key1
+                        secret: xJ+zuuX8JByMhPdb630myE646NeBGQKaNlrG1pzs5ec= # TODO: Change or generate
+                - identity: {}
+    - name: Create kube-apiserver service
+      vars:
+        INTERNAL_IP: "{{ ansible_default_ipv4.address }}"
+      template:
+        src: templates/kube-apiserver.service.j2
+        dest: /etc/systemd/system/kube-apiserver.service
+    # kube-controller-manager
+    - name: Copy kube-controller-manager
+      copy:
+        src: ../kubeconfig/{{ item }}
+        dest: /var/lib/kubernetes/{{ item }}
+      with_items:
+        - kube-controller-manager.kubeconfig
+    - name: Create kube-controller-manager service
+      template:
+        src: templates/kube-controller-manager.service.j2
+        dest: /etc/systemd/system/kube-controller-manager.service
+    # kube-scheduler
+    - name: Copy kube-scheduler
+      copy:
+        src: ../kubeconfig/{{ item }}
+        dest: /var/lib/kubernetes/{{ item }}
+      with_items:
+        - kube-scheduler.kubeconfig
+    - name: Configure kube-scheduler
+      copy:
+        dest: /etc/kubernetes/config/kube-scheduler.yaml
+        content: |
+          apiVersion: kubescheduler.config.k8s.io/v1alpha1
+          kind: KubeSchedulerConfiguration
+          clientConnection:
+            kubeconfig: "/var/lib/kubernetes/kube-scheduler.kubeconfig"
+          leaderElection:
+            leaderElect: true
+    - name: Create kube-scheduler service
+      template:
+        src: templates/kube-scheduler.service.j2
+        dest: /etc/systemd/system/kube-scheduler.service
+    # Start all
+    - name: Start and Enable kube services
+      service:
+        name: "{{ item }}"
+        enabled: yes
+        state: started
+        daemon_reload: true
+      with_items:
+        - kube-apiserver
+        - kube-controller-manager
+        - kube-scheduler
 
 - name: Worker
   hosts: workers
