@@ -158,6 +158,20 @@
         - kube-apiserver
         - kube-controller-manager
         - kube-scheduler
+    # Proxy healthz
+    - name: Install NGINX
+      apt:
+        name: nginx
+        state: latest
+    - name: Configure nginx healthz proxy
+      copy:
+        src: files/kubernetes.default.svc.cluster.local
+        dest: /etc/nginx/sites-enabled/kubernetes.default.svc.cluster.local
+    - name: Start NGINX
+      service:
+        name: nginx
+        enabled: yes
+        state: restarted
 
 - name: Worker
   hosts: workers
