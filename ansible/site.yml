@@ -1,8 +1,8 @@
 ---
-- name: Controllers
+- name: Controller Certificates
   tags:
     - controllers
-    - controllers-init
+    - controllers-certs
   hosts: controllers
   tasks:
     - name: Copy Certs
@@ -16,6 +16,35 @@
         - kubernetes.pem
         - service-account-key.pem
         - service-account.pem
+
+- name: Worker Certificates
+  tags:
+    - workers
+    - workers-certs
+  hosts: workers
+  tasks:
+    - name: Copy Certs
+      copy:
+        src: ../certificates/{{ item }}
+        dest: ~/{{ item }}
+      with_items:
+        - ca.pem
+        - "{{ inventory_hostname }}.pem"
+        - "{{ inventory_hostname }}-key.pem"
+    - name: Copy kubeconfig
+      copy:
+        src: ../kubeconfig/{{ item }}
+        dest: ~/{{ item }}
+      with_items:
+        - kube-proxy.kubeconfig
+        - "{{ inventory_hostname }}.kubeconfig"
+
+- name: Controllers Init
+  tags:
+    - controllers
+    - controllers-init
+  hosts: controllers
+  tasks:
     - name: Copy kubeconfig
       copy:
         src: ../kubeconfig/{{ item }}
@@ -58,11 +87,11 @@
         src: templates/etcd.service.j2
         dest: /etc/systemd/system/etcd.service
     - name: Start and Enable etcd
-      service:
+      systemd:
         name: etcd
         enabled: yes
-        state: started
-        daemon_reload: true
+        state: restarted
+        daemon_reload: yes
     # kubernetes
     - name: Create kubernetes dirs
       file:
@@ -152,11 +181,11 @@
         dest: /etc/systemd/system/kube-scheduler.service
     # Start all
     - name: Start and Enable kube services
-      service:
+      systemd:
         name: "{{ item }}"
         enabled: yes
-        state: started
-        daemon_reload: true
+        state: restarted
+        daemon_reload: yes
       with_items:
         - kube-apiserver
         - kube-controller-manager
@@ -171,32 +200,10 @@
         src: files/kubernetes.default.svc.cluster.local
         dest: /etc/nginx/sites-enabled/kubernetes.default.svc.cluster.local
     - name: Start NGINX
-      service:
+      systemd:
         name: nginx
         enabled: yes
         state: restarted
-
-- name: Worker
-  tags:
-    - workers
-    - workers-init
-  hosts: workers
-  tasks:
-    - name: Copy Certs
-      copy:
-        src: ../certificates/{{ item }}
-        dest: ~/{{ item }}
-      with_items:
-        - ca.pem
-        - "{{ inventory_hostname }}.pem"
-        - "{{ inventory_hostname }}-key.pem"
-    - name: Copy kubeconfig
-      copy:
-        src: ../kubeconfig/{{ item }}
-        dest: ~/{{ item }}
-      with_items:
-        - kube-proxy.kubeconfig
-        - "{{ inventory_hostname }}.kubeconfig"
 
 - name: Kubectl with ctrl-0
   tags:
@@ -329,7 +336,7 @@
               "ipam": {
                   "type": "host-local",
                   "ranges": [
-                    [{"subnet": "10.200.0.0/16"}]
+                    [{"subnet": "{{ pod_cidr }}"}]
                   ],
                   "routes": [{"dst": "0.0.0.0/0"}]
               }
@@ -382,6 +389,7 @@
           dest: /var/lib/kubernetes/ca.pem
         - src: ../kubeconfig/{{ inventory_hostname }}.kubeconfig
           dest: /var/lib/kubelet/kubeconfig
+
     - name: Create the kubelet-config.yaml configuration file
       copy:
         dest: /var/lib/kubelet/kubelet-config.yaml
@@ -400,14 +408,16 @@
           clusterDomain: "cluster.local"
           clusterDNS:
             - "10.32.0.10"
-          podCIDR: "10.200.0.0/16"
+          podCIDR: "{{ pod_cidr }}"
           resolvConf: "/run/systemd/resolve/resolv.conf"
           runtimeRequestTimeout: "15m"
           tlsCertFile: "/var/lib/kubelet/{{ inventory_hostname }}.pem"
           tlsPrivateKeyFile: "/var/lib/kubelet/{{ inventory_hostname }}-key.pem"
     - name: Create the kubelet.service systemd unit file
-      copy:
-        src: files/kubelet.service
+      vars:
+        HOSTNAME: "{{ inventory_hostname }}"
+      template:
+        src: templates/kubelet.service.j2
         dest: /etc/systemd/system/kubelet.service
 
 - name: Configure the Kubernetes Proxy
@@ -440,11 +450,11 @@
     - workers-start-services
   hosts: workers
   tasks:
-    - service:
+    - systemd:
         name: "{{ item }}"
         enabled: yes
-        state: started
-        daemon_reload: true
+        state: restarted
+        daemon_reload: yes
       with_items:
         - containerd
         - kubelet

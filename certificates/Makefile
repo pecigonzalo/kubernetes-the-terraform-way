@@ -58,7 +58,7 @@ kubernetes:
 		-ca=ca.pem \
 		-ca-key=ca-key.pem \
 		-config=ca-config.json \
-		-hostname=127.0.0.1,kubernetes,10.240.96.10,10.240.128.10,10.240.160.10,kubernetes.default,kubernetes.default.svc,kubernetes.default.svc.cluster,kubernetes.svc.cluster.local \
+		-hostname=127.0.0.1,ec2-3-124-84-154.eu-central-1.compute.amazonaws.com,kubernetes,10.240.96.10,10.240.128.10,10.240.160.10,kubernetes.default,kubernetes.default.svc,kubernetes.default.svc.cluster,kubernetes.svc.cluster.local \
 		-profile=kubernetes \
 		kubernetes-csr.json | cfssljson -bare kubernetes
 

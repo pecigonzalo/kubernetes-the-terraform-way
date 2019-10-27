@@ -6,9 +6,9 @@ locals {
   ]
 
   workers = [
-    "wrkr-0 ansible_host=${module.wrkr-0.private_ip}",
-    "wrkr-1 ansible_host=${module.wrkr-1.private_ip}",
-    "wrkr-2 ansible_host=${module.wrkr-2.private_ip}",
+    "wrkr-0 ansible_host=${module.wrkr-0.private_ip} pod_cidr=10.200.0.0/24",
+    "wrkr-1 ansible_host=${module.wrkr-1.private_ip} pod_cidr=10.200.1.0/24",
+    "wrkr-2 ansible_host=${module.wrkr-2.private_ip} pod_cidr=10.200.2.0/24",
   ]
 }
 
