@@ -14,6 +14,6 @@ This repository is used to implement and follow [kubernetes-the-hard-way](https:
 - Ansible code could be optimized, but I tried to keep it "as is" while following the guide, only using as a tool not to do the steps on the console
 
 ## TODO
-- [ ] Add CNAME or similar static DNS or IPs to LB
-- [ ] Set `ansible/group_vars/workers.yml` dynamically
-- [ ] Set `certificates/Makefile` cert dynamically
+- [x] Add CNAME or similar static DNS or IPs to LB
+- [x] Set `ansible/group_vars/workers.yml` dynamically
+- [x] Set `certificates/Makefile` cert dynamically

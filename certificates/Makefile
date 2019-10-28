@@ -51,16 +51,9 @@ scheduler:
 		-profile=kubernetes \
 		kube-scheduler-csr.json | cfssljson -bare kube-scheduler
 
-# TODO: Add hostnames
 .PHONY: kubernetes
 kubernetes:
-	cfssl gencert \
-		-ca=ca.pem \
-		-ca-key=ca-key.pem \
-		-config=ca-config.json \
-		-hostname=127.0.0.1,ec2-3-121-135-18.eu-central-1.compute.amazonaws.com,kubernetes,10.240.96.10,10.240.128.10,10.240.160.10,kubernetes.default,kubernetes.default.svc,kubernetes.default.svc.cluster,kubernetes.svc.cluster.local,10.32.0.1,10.240.0.10,10.240.32.10,10.240.64.10 \
-		-profile=kubernetes \
-		kubernetes-csr.json | cfssljson -bare kubernetes
+	./gen-kubernetes-cert.sh
 
 .PHONY: service-account
 service-account:
